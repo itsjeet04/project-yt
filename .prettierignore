@@ -1,0 +1,35 @@
+# Ignore build output
+dist/
+build/
+
+# Ignore node modules
+node_modules/
+
+# Ignore logs
+*.log
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Ignore coverage reports
+coverage/
+
+# Ignore IDE settings
+.vscode/
+.idea/
+
+# Ignore compiled files
+*.min.js
+*.bundle.js
+
+# Ignore public files
+public/
+
+# Ignore specific config files (optional)
+package-lock.json
+yarn.lock
+
+# Ignore Git-related files
+.git/
