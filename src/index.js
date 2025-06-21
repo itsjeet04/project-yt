@@ -1,19 +1,29 @@
-
-
-import mongoose  from "mongoose";
+import mongoose from "mongoose";
 import { DB_NAME } from "./constants.js";
 import express from "express";
 import dotenv from "dotenv";
-
 dotenv.config({ path: "./.env" });
-
-
-// 2nd approach: Using connectDB function in index.js
+import app from "./app.js";
 import connectDB from "./db/db.js";
+
+
 connectDB()
+    .then(() => {
+        app.on("error", (error) => {
+            console.error("Mongoose/app connection error:", error);
+            throw error;
+        })
+        app.listen(process.env.PORT, () => {
+            console.log(`Server is running on port ${process.env.PORT}`);
+        }
+        )
+    })
+    .catch((error) => {
+        console.error("ERROR in connecting DB", error);
+    })
 
 /*
-1st approach: Using async/await with IIFE in index.js
+another approach: Using async/await with IIFE in index.js
 const app = express();
 
 // iffe // Immediately Invoked Function Expression
@@ -34,4 +44,3 @@ const app = express();
     }
  })()
     */
-   
