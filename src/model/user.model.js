@@ -65,10 +65,13 @@ userScheme.methods.isPasswordCorrect = async function (password){
     return await bcrypt.compare(password, this.password);
 }
 
+// Access Token → grant short-lived access to protected resources.
+// Refresh Token → used to obtain a new access token when the current one expires.
 userSchema.methods.generateAccessToken = function(){
     return jwt.sign(
+        // payload
         {
-            _id: this._id,
+            _id: this._id, // User's MongoDB ObjectId
             email: this.email,
             username: this.username,
             fullName: this.fullName
@@ -79,6 +82,8 @@ userSchema.methods.generateAccessToken = function(){
         }
     )
 }
+//  When the access token expires, client sends refresh token to get a new access token.
+// Refresh Tokens should always be stored securely 
 userSchema.methods.generateRefreshToken = function(){
     return jwt.sign(
         {
