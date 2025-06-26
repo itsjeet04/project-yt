@@ -24,6 +24,10 @@ app.use(cookieParser());
 
 
 // import routes
-import userRoutes from './routes/user.routes.js';
+import userRoutes from './routes/user.routes.js'; 
+
+// routes declaration as middleware
+app.use('/api/v1/users', userRoutes);
+
 
 export default app;
