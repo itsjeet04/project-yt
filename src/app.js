@@ -11,7 +11,7 @@ app.use(cors({
     credentials: true,
 }))
 
-app.use(express.json({limit: '10kb'}));
+app.use(express.json());
 // accept json data 
 
 app.use(express.urlencoded({ extended: true }));

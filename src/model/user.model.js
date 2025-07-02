@@ -1,77 +1,72 @@
 import mongoose, {Schema} from "mongoose";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt"
 
-const userScheme = new Schema({
-    username : {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true,
-        index : true,
-        // used to search for the user
-    },
-    email: {
+const userSchema = new Schema(
+    {
+        username: {
             type: String,
             required: true,
             unique: true,
             lowercase: true,
             trim: true, 
+            index: true
         },
-    fullName: {
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowecase: true,
+            trim: true, 
+        },
+        fullName: {
             type: String,
             required: true,
             trim: true, 
             index: true
         },
-    avtar : {
-            type: String,  // URL cloudinary
+        avatar: {
+            type: String, // cloudinary url
             required: true,
-    },
-    coverimage : {
-            type: String,  
-            required: false,
-    },
-    watchHistory: [
-        {
-            type : mongoose.Schema.Types.ObjectId,
-            ref: "Video" // Reference to the Video model
+        },
+        coverImage: {
+            type: String, // cloudinary url
+        },
+        watchHistory: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Video"
+            }
+        ],
+        password: {
+            type: String,
+            required: [true, 'Password is required']
+        },
+        refreshToken: {
+            type: String
         }
-    ],
-    password: {
-            type: String, // encrypted password 
-            required: [true, "Password is required"],
+
     },
-    refreshToken: {
-        type : String,
+    {
+        timestamps: true
     }
-}, {
-    timestamps: true, // createdAt and updatedAt fields
+)
+
+userSchema.pre("save", async function (next) {
+    if(!this.isModified("password")) return next();
+
+    this.password = await bcrypt.hash(this.password, 10)
+    next()
 })
 
-
-userScheme.pre("save", async function (next) {
-    // dont use arrow function here, because it does not have its own this context
-    // this function is called before saving the user to the database
-    if (this.isModified("password")) {
-        // if the password is modified, hash it
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
-    }
-})
-
-userScheme.methods.isPasswordCorrect = async function (password){
-    return await bcrypt.compare(password, this.password);
+userSchema.methods.isPasswordCorrect = async function(password){
+    return await bcrypt.compare(password, this.password)
 }
 
-// Access Token → grant short-lived access to protected resources.
-// Refresh Token → used to obtain a new access token when the current one expires.
 userSchema.methods.generateAccessToken = function(){
     return jwt.sign(
-        // payload
         {
-            _id: this._id, // User's MongoDB ObjectId
+            _id: this._id,
             email: this.email,
             username: this.username,
             fullName: this.fullName
@@ -82,8 +77,6 @@ userSchema.methods.generateAccessToken = function(){
         }
     )
 }
-//  When the access token expires, client sends refresh token to get a new access token.
-// Refresh Tokens should always be stored securely 
 userSchema.methods.generateRefreshToken = function(){
     return jwt.sign(
         {
@@ -97,4 +90,4 @@ userSchema.methods.generateRefreshToken = function(){
     )
 }
 
-export const User = mongoose.model("User", userScheme); 
+export const User = mongoose.model("User", userSchema)
