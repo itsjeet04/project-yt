@@ -43,10 +43,10 @@ const userSchema = new Schema(
             required: [true, 'Password is required']
         },
         refreshToken: {
-            type: String
+            type: String    
         }
 
-    },
+    },  
     {
         timestamps: true
     }
@@ -62,6 +62,8 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compare(password, this.password)
 }
+// access token is short lived - Grants access to protected resources (api)
+// refresh token is long lived -  get a new access token without requiring the user to log in again
 
 userSchema.methods.generateAccessToken = function(){
     return jwt.sign(
