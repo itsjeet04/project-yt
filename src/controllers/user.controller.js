@@ -28,6 +28,9 @@ const genrateAccessandRefreshTokens = async(userId) =>{
 const registerUser = asyncHandler(async (req, res) => {
   const { username, fullName, email, password } = req.body;
 
+  // console.log("Request body:", req.body);
+  
+
   if ([username, fullName, email, password].some(field => !field || field.trim() === "")) {
     throw new ApiError(400, "All fields are required");
   }
@@ -86,14 +89,15 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req,res) => {
-  const { email , username, password} = req.body;
-  if (!email || !username) {
+  const { email , username, password  } = req.body;
+  // console.log("Login request body:", req.body);
+  if (!email && !username) {
     throw new ApiError(400, "Email or username are required");
   }
 
-  const user = await User.findOne({
-    $or: [{ email }, { username}]
-  })
+const user = await User.findOne({
+  $or: [{ email }, { username }]
+}).select("+password");
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -112,21 +116,22 @@ const loginUser = asyncHandler(async (req,res) => {
   
   const options= {
     httpOnly: true, // prevents client-side JavaScript from accessing the cookie
-    secure : true}
-
-  // set the refresh token in the cookie
-  return res.status(200).cookie("accessToken", accessToken,options)
+    secure : false}
+ return res.status(200).cookie("accessToken", accessToken,options)
     .cookie("refreshToken", refreshToken, options)
     .json(new ApiResponse(200,{
       user: LoggedInUser,accessToken, refreshToken
-    }, "User logged in successfully"));
-   
+    }, "User logged in successfully")
+    );
+
+
 }) 
+
 
 const logoutUser = asyncHandler(async (req, res) => {
   // clear the cookies
   // reset the refresh token in the database
-  User.findByIdAndUpdate(req.user._id,
+  await User.findByIdAndUpdate(req.user._id,
     {
       $set : { 
             refreshToken: undefined
