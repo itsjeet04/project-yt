@@ -155,6 +155,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async(req, res) => {
   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+  console.log("Incoming refresh token:", incomingRefreshToken);
+  
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Refresh token not received");
   }
