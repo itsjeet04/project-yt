@@ -272,6 +272,79 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "User cover image updated successfully"));
 })
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const {username} = req.params;
+  // req.params is used to get the parameters from the URL
+  if (!username?.trim()) {
+    throw new ApiError(400, "Username is required");
+  }
+
+  const channel = await User.aggregate([
+    // this will add subscribers and subscribedTo fields to the user object , like a join operation
+    {
+      $match: {
+        username: username.toLowerCase() 
+      }// match the user with the username provided in the URL
+    },
+    {
+      $lookup:{
+        from: "subscriptions", //model name in plural form and lowercase
+        localField: "_id", 
+        foreignField: "channel", //field in the Subscription model
+        as: "subscribers" //name of the field in the User model
+      } //we find out how many subscribers the channel has      
+    },
+    {
+       $lookup:{
+        from: "subscriptions", //model name in plural form and lowercase
+        localField: "_id", 
+        foreignField: "subscriber", //field in the Subscription model
+        as: "subscribedto" //name of the field in the User model
+      } //we find out how many channels the user is subscribed to
+    },
+    {
+      $addFields: {
+        subscribersCount: { 
+          $size: "$subscribers"
+         }, //count the number of subscribers
+        subscribedToCount: {
+          $size: "$subscribedto" } ,//count the number of channels the user is subscribed to
+    isSubscribed: {
+      $cond: {
+        if: { $in: [req.user?._id, "$subscribers.subscriber"] }, //check if the user is subscribed to the channel
+        then: true,
+        else: false
+      }
+    }  // check if the user is subscribed to the channel
+  } // add the fields to the user object
+    },
+    {
+      $project: {
+        fullName: 1, // 1 means include this field, 0 means exclude this field
+        username: 1,
+        subscribersCount: 1,
+        subscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1
+      } // project the fields that we want to return
+    }
+  ]);
+  
+  console.log("Channel profile fetched:", channel);
+  
+  if (!channel || channel.length === 0) {
+    throw new ApiError(404, "Channel not found");
+  }
+
+  return res.status(200).json(new ApiResponse(200, channel[0], "Channel profile fetched successfully")); 
+  //channel[0] is used because aggregate returns an array of objects, we only need the first object
+})
+
+
+
+
 export {
    registerUser,
    loginUser,
@@ -281,5 +354,6 @@ export {
    getCurrentUser,
    updateAccountDetails,
    updateUserAvatar,
-   updateUserCoverImage
+   updateUserCoverImage,
+   getUserChannelProfile
 };       
