@@ -150,8 +150,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   .status(200)
   .clearCookie("accessToken", options)
   .clearCookie("refreshToken", options)
-  .json(new ApiResponse(200, {}, "User logged out successfully"));
-})
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
+  });
 
 const refreshAccessToken = asyncHandler(async(req, res) => {
   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
@@ -342,7 +342,59 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   //channel[0] is used because aggregate returns an array of objects, we only need the first object
 })
 
+const getWatchHistory = asyncHandler(async (req, res) =>{
 
+  // User.findById(req.user._id) -> this is a mongoose query to find the user by id, but by (req.user._id) we actually 
+  // get the string id of the user from the database and mongoose will convert it to an ObjectId
+
+  // but in aggregate we need to use mongoose.Types.ObjectId(req.user._id) to convert the string id to an ObjectId
+
+  const user = await User.aggregate(
+    [
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user._id) // match the user with the id provided in the request
+        }
+      },
+      {
+        $lookup: {
+          from: "videos", // model name in plural form and lowercase
+          localField: "watchHistory", // field in the User model
+          foreignField: "_id", // field in the Video model
+          as: "watchHistory" , // name of the field in the User model
+          pipeline: [
+            {
+              $lookup: {
+                from: "users", // model name in plural form and lowercase
+                localField: "owner", // field in the Video model
+                foreignField: "_id", // field in the User model
+                as: "owner", // name of the field in the Video model 
+                pipeline: [
+                  {
+                    $project: {
+                      fullName: 1,
+                      username: 1,
+                      avatar: 1
+                    }
+                  },
+                  {
+                    $addFields: {
+                      owner :{
+                        $first: "$owner" // get the first element of the owner array
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ] 
+        }
+      }
+    ]
+  );
+
+  return res.status(200).json(new ApiResponse(200, user[0]?.watchHistory || [], "Watch history fetched successfully"));
+})
 
 
 export {
@@ -355,5 +407,6 @@ export {
    updateAccountDetails,
    updateUserAvatar,
    updateUserCoverImage,
-   getUserChannelProfile
+   getUserChannelProfile,
+   getWatchHistory
 };       
