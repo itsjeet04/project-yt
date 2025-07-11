@@ -1,5 +1,8 @@
 import mongoose,{Schema} from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+// mongooseAggregatePaginate helps in paginating the results of aggregate queries 
+// Pagination lets you:Return a subset of data per page.Make the API efficient and fast.
+
 
 const videoSchema = new mongoose.Schema({
 
